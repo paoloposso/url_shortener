@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  # Go API service
+  go-api:
+    build:
+      context: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongodb
+    environment:
+      MONGO_URI: mongodb://mongodb:27017
+      APP_ENV: development
+      BASE_URL: http://localhost:8080/
+
+  # MongoDB service
+  mongodb:
+    image: mongo
+    ports:
+      - "27017:27017"  # Map the host's port 27017 to the container's port 27017
+    volumes:
+      - mongodb_data:/data/db  # Persist MongoDB data outside the container
+
+volumes:
+  mongodb_data:
