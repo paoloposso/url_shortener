@@ -15,7 +15,7 @@ type ShortenRequest struct {
 }
 
 func init() {
-	if os.Getenv("APP_ENV") == "development" {
+	if os.Getenv("APP_ENV") != "production" {
 		err := godotenv.Load()
 		if err != nil {
 			log.Fatal("Error loading .env file")
@@ -59,6 +59,19 @@ func main() {
 		c.JSON(200, gin.H{
 			"shortUrl": shortUrl,
 		})
+	})
+
+	router.GET("/:shortUrl", func(c *gin.Context) {
+		shortUrl := c.Param("shortUrl")
+
+		longUrl, err := service.GetUrl(shortUrl)
+
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.Redirect(302, longUrl)
 	})
 
 	if err := router.Run(":8080"); err != nil {
