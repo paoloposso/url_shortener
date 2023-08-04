@@ -6,6 +6,7 @@ import (
 
 type IService interface {
 	ShortenURL(string) (string, error)
+	GetUrl(string) (string, error)
 }
 
 type Service struct {
@@ -13,7 +14,7 @@ type Service struct {
 }
 
 // NewService creates a new instance of Service
-func NewService(repository IRepository) Service {
+func NewService(repository IRepository) IService {
 	return Service{
 		repository: repository,
 	}
@@ -22,7 +23,7 @@ func NewService(repository IRepository) Service {
 func (s Service) ShortenURL(url string) (string, error) {
 	shortened := encode(url)
 
-	if err := s.repository.Save(url, shortened); err != nil {
+	if err := s.repository.Save(shortened, url); err != nil {
 		return "", err
 	}
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log"
-	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -28,6 +27,18 @@ func NewRepository(connectionString, dbName string) (*Repository, error) {
 	}
 
 	db := client.Database(dbName)
+
+	collection := db.Collection("urls")
+
+	indexModel := mongo.IndexModel{
+		Keys:    bson.D{{Key: "url", Value: 1}},  // Index key
+		Options: options.Index().SetUnique(true), // Make it a unique index
+	}
+
+	_, err = collection.Indexes().CreateOne(ctx, indexModel)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Repository{client: client, db: db}, nil
 }
@@ -54,9 +65,9 @@ func (r *Repository) Find(shortURL string) (string, error) {
 		return "", errors.New("unable to cast url to string")
 	}
 
-	baseURL := os.Getenv("BASE_URL")
+	// baseURL := os.Getenv("BASE_URL")
 
-	return baseURL + url, nil
+	return url, nil
 }
 
 // Save is a method on the Repository struct.
@@ -66,9 +77,14 @@ func (r *Repository) Save(shortURL string, longURL string) error {
 
 	collection := r.db.Collection("urls")
 
-	doc := URLDocument{ShortURL: shortURL, URL: longURL}
+	filter := bson.D{{Key: "url", Value: longURL}}
 
-	_, err := collection.InsertOne(ctx, doc)
+	update := bson.D{{Key: "$set", Value: bson.D{
+		{Key: "shortUrl", Value: shortURL},
+		{Key: "url", Value: longURL},
+	}}}
+
+	_, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
 	return err
 }
 
