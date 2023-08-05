@@ -1,7 +1,7 @@
 package url
 
 import (
-	"os"
+	"github.com/paoloposso/url_shrt/util"
 )
 
 type IService interface {
@@ -10,13 +10,15 @@ type IService interface {
 }
 
 type Service struct {
-	repository IRepository
+	repository    IRepository
+	configService util.ConfigService
 }
 
 // NewService creates a new instance of Service
-func NewService(repository IRepository) IService {
+func NewService(repository IRepository, config util.ConfigService) IService {
 	return Service{
-		repository: repository,
+		repository:    repository,
+		configService: config,
 	}
 }
 
@@ -27,7 +29,7 @@ func (s Service) ShortenURL(url string) (string, error) {
 		return "", err
 	}
 
-	baseURL := os.Getenv("BASE_URL")
+	baseURL := s.configService.GetBaseURL()
 
 	return baseURL + shortened, nil
 }

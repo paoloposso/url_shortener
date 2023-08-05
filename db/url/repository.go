@@ -6,20 +6,23 @@ import (
 	"log"
 	"time"
 
+	"github.com/paoloposso/url_shrt/util"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Repository struct {
-	client *mongo.Client
-	db     *mongo.Database
+	client  *mongo.Client
+	db      *mongo.Database
+	timeout time.Duration
 }
 
-// NewRepository is a constructor for the Repository
-func NewRepository(connectionString, dbName string) (*Repository, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func NewRepository(connectionString, dbName string, c util.ConfigService) (*Repository, error) {
+
+	timeout := c.GetMongoDbTimeOut()
+
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(connectionString))
 	if err != nil {
@@ -31,8 +34,8 @@ func NewRepository(connectionString, dbName string) (*Repository, error) {
 	collection := db.Collection("urls")
 
 	indexModel := mongo.IndexModel{
-		Keys:    bson.D{{Key: "url", Value: 1}},  // Index key
-		Options: options.Index().SetUnique(true), // Make it a unique index
+		Keys:    bson.D{{Key: "url", Value: 1}},
+		Options: options.Index().SetUnique(true),
 	}
 
 	_, err = collection.Indexes().CreateOne(ctx, indexModel)
@@ -43,10 +46,8 @@ func NewRepository(connectionString, dbName string) (*Repository, error) {
 	return &Repository{client: client, db: db}, nil
 }
 
-// Find is a method on the Repository struct.
 func (r *Repository) Find(shortURL string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	ctx, _ := context.WithTimeout(context.Background(), r.timeout)
 
 	collection := r.db.Collection("urls")
 
@@ -65,15 +66,11 @@ func (r *Repository) Find(shortURL string) (string, error) {
 		return "", errors.New("unable to cast url to string")
 	}
 
-	// baseURL := os.Getenv("BASE_URL")
-
 	return url, nil
 }
 
-// Save is a method on the Repository struct.
 func (r *Repository) Save(shortURL string, longURL string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	ctx, _ := context.WithTimeout(context.Background(), r.timeout)
 
 	collection := r.db.Collection("urls")
 
@@ -88,12 +85,8 @@ func (r *Repository) Save(shortURL string, longURL string) error {
 	return err
 }
 
-// Disconnect is a method to disconnect from the database.
 func (r *Repository) Disconnect() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := r.client.Disconnect(ctx); err != nil {
+	if err := r.client.Disconnect(context.Background()); err != nil {
 		log.Fatal(err)
 	}
 }

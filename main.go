@@ -8,6 +8,7 @@ import (
 	"github.com/joho/godotenv"
 	db_url "github.com/paoloposso/url_shrt/db/url"
 	"github.com/paoloposso/url_shrt/url"
+	"github.com/paoloposso/url_shrt/util"
 )
 
 type ShortenRequest struct {
@@ -26,13 +27,15 @@ func init() {
 func main() {
 	log.Println(os.Getenv("MONGO_URI"))
 
-	repo, err := db_url.NewRepository(os.Getenv("MONGO_URI"), "url_shrt")
+	config := util.EnvironmentConfigService{}
+
+	repo, err := db_url.NewRepository(os.Getenv("MONGO_URI"), "url_shrt", config)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	service := url.NewService(repo)
+	service := url.NewService(repo, config)
 
 	router := gin.Default()
 
