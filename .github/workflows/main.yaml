@@ -1,4 +1,4 @@
-name: Go Tests with Docker Compose
+name: Test API
 
 on: [push, pull_request]
 
