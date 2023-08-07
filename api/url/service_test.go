@@ -1,6 +1,7 @@
 package url_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -15,7 +16,10 @@ func (mr *MockRepository) Save(shortURL string, longURL string) error {
 }
 
 func (mr *MockRepository) Find(shortURL string) (string, error) {
-	return "http://www.google.com", nil
+	if shortURL == "123456" {
+		return "http://www.google.com", nil
+	}
+	return "", errors.New("not found")
 }
 
 // MockConfigService is a mock implementation of util.ConfigService
@@ -29,7 +33,7 @@ func (mcs MockConfigService) GetMongoDbTimeOut() time.Duration {
 	return 10 * time.Second
 }
 
-func TestShortenURL(t *testing.T) {
+func TestShouldSaveShortenedURL(t *testing.T) {
 	repo := &MockRepository{}
 	configService := &MockConfigService{}
 	service := url.NewService(repo, configService)
@@ -41,14 +45,26 @@ func TestShortenURL(t *testing.T) {
 	}
 }
 
-func TestGetUrl(t *testing.T) {
+func TestShouldReturnLongURL(t *testing.T) {
 	repo := &MockRepository{}
 	configService := &MockConfigService{}
 	service := url.NewService(repo, configService)
 
-	result, err := service.GetUrl("http://mockbaseurl.com/123456")
+	result, err := service.GetUrl("123456")
 
 	if err != nil || result == "" {
 		t.Error("Error while getting URL")
+	}
+}
+
+func TestShouldFailInexistingShortenedURL(t *testing.T) {
+	repo := &MockRepository{}
+	configService := &MockConfigService{}
+	service := url.NewService(repo, configService)
+
+	result, err := service.GetUrl("aaaaaaa")
+
+	if err == nil || result != "" {
+		t.Error("Should fail when getting inexisting URL")
 	}
 }
