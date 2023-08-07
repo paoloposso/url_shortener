@@ -17,15 +17,6 @@ jobs:
       - name: Build
         run: go build -v ./...
 
-      - name: Set up Go environment
-        run: |
-          go env -w GOPROXY=direct
-          go env -w GONOSUMDB=*
-
-      - name: Install dependencies
-        working-directory: ./api
-        run: go mod tidy
-
       - name: Run Go tests
         working-directory: ./api
         run: go test ./...
